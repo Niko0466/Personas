@@ -4,6 +4,7 @@
  */
 package com.example.aplicacion.personas.controller;
 
+import com.example.aplicacion.personas.exception.PersonaNotFoundException;
 import com.example.aplicacion.personas.model.PersonaModel;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.example.aplicacion.personas.repository.PersonaRepository;
 import com.example.aplicacion.personas.service.PersonaService;
-import com.example.aplicacion.personas.utils.CustomResponse;
+import javax.transaction.Transactional;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PutMapping;
 
 /**
@@ -27,45 +29,50 @@ import org.springframework.web.bind.annotation.PutMapping;
  * @author Admin
  */
 @RestController
-@RequestMapping("/api/v1/")
+@RequestMapping("/personas")
 public class PersonaControlador {
 
-    @Autowired 
+    @Autowired
     private PersonaService personaService;
+    
+    @Transactional
+    @PostMapping
+    public ResponseEntity<?> registrarPersona(@RequestBody PersonaModel persona) {
+        personaService.createPersona(persona);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
-    
-    @PostMapping("/personas")
-    public CustomResponse registrarPersona(@RequestBody PersonaModel persona) {
-        CustomResponse customeResponse = new CustomResponse();
-        personaService.createPersona(persona);        
-        return customeResponse;
+    @Transactional
+    @GetMapping
+    public ResponseEntity<List<PersonaModel>> getPersonas(){
+        List<PersonaModel> personas = personaService.getPersonas();
+        return ResponseEntity.ok(personas);
     }
-    
-    @GetMapping("/personas")
-    public CustomResponse getPersonas(){
-        CustomResponse customeResponse = new CustomResponse();
-        customeResponse.setData(personaService.getPersonas());
-        return customeResponse;
+
+    @Transactional
+    @GetMapping("/{id}")
+    public ResponseEntity<PersonaModel> getPersonaById(@PathVariable Long id) {
+        PersonaModel persona = personaService.getPersonaById(id);
+        return ResponseEntity.ok(persona);
     }
-    
-   @GetMapping("/personas/{id}")
-    public CustomResponse getPersonaById(@PathVariable Long id) {
-        CustomResponse customeResponse = new CustomResponse();
-        customeResponse.setData(personaService.getPersonaById(id));
-        return customeResponse;
+
+    @Transactional
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updatePersona(@RequestBody PersonaModel persona, @PathVariable Long id){
+        personaService.updatePersona(persona, id);
+        return ResponseEntity.ok().build();
     }
-    
-    @PutMapping("/personas/{id}")
-    public CustomResponse updatePersona(@RequestBody PersonaModel persona, @PathVariable Long id){
-        CustomResponse customResponse = new CustomResponse();
-        personaService.updatePersona(persona, id);        
-        return customResponse;       
+
+    @Transactional
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deletePersona(@PathVariable Long id){
+        personaService.deletePersona(id);
+        return ResponseEntity.noContent().build();
     }
-    
-    @DeleteMapping("/personas/{id}")
-    public CustomResponse deletePersona(@PathVariable Long id){
-        CustomResponse customeResponse = new CustomResponse();
-        personaService.deletePersona(id);        
-        return customeResponse;       
+
+    // Manejo de excepciones
+    @ExceptionHandler(PersonaNotFoundException.class)
+    public ResponseEntity<String> handlePersonaNotFoundException(PersonaNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 }

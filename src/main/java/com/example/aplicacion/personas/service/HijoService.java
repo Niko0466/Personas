@@ -18,4 +18,5 @@ public interface HijoService {
     public HijoModel getHijoById(Long id);
     public void updateHijo(HijoModel hijoModel, Long id);
     public void deleteHijo(Long id);
+    public List<HijoModel> getHijosByPersonaId(Long id);
 }

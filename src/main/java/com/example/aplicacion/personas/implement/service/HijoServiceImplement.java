@@ -4,6 +4,7 @@
  */
 package com.example.aplicacion.personas.implement.service;
 
+import com.example.aplicacion.personas.exception.PersonaNotFoundException;
 import com.example.aplicacion.personas.model.HijoModel;
 import com.example.aplicacion.personas.repository.HijoRepository;
 import com.example.aplicacion.personas.service.HijoService;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class HijoServiceImplement implements HijoService {
 
-    @Autowired
+     @Autowired
     private HijoRepository hijoRepository;
 
     @Override
@@ -29,30 +30,38 @@ public class HijoServiceImplement implements HijoService {
     }
 
     @Override
-    public List getHijos() {
+    public List<HijoModel> getHijos() {
         return hijoRepository.findAll();
     }
 
     @Override
     public HijoModel getHijoById(Long id) {
         Optional<HijoModel> hijoOptional = hijoRepository.findById(id);
-        return hijoOptional.orElse(null);
+        if (hijoOptional.isPresent()) {
+            return hijoOptional.get();
+        } else {
+            // Si no se encuentra el hijo con el ID proporcionado, lanzar una excepción
+            throw new PersonaNotFoundException("No se encontró el hijo con el ID proporcionado: " + id);
+        }
     }
+    
 
     @Override
     public void updateHijo(HijoModel hijoModel, Long id) {
         Optional<HijoModel> hijoOptional = hijoRepository.findById(id);
-        if (hijoOptional.isPresent()) { // Verifica si la persona existe
+        if (hijoOptional.isPresent()) { // Verifica si el hijo existe
             HijoModel existingHijo = hijoOptional.get();
             existingHijo.setNombre(hijoModel.getNombre());
             existingHijo.setEdad(hijoModel.getEdad());
             try {
-                hijoRepository.save(existingHijo); // Guarda la persona actualizada
+                hijoRepository.save(existingHijo); // Guarda el hijo actualizado
             } catch (Exception e) {
+                // Maneja la excepción
                 throw new RuntimeException("Error al actualizar al hijo: " + e.getMessage());
             }
         } else {
-            throw new RuntimeException("No se encontró al hijo con el ID proporcionado: " + id);
+            // Si no se encuentra el hijo con el ID proporcionado, lanzar una excepción
+            throw new PersonaNotFoundException("No se encontró el hijo con el ID proporcionado: " + id);
         }
     }
 
@@ -61,8 +70,17 @@ public class HijoServiceImplement implements HijoService {
         try {
             hijoRepository.deleteById(id);
         } catch (EmptyResultDataAccessException e) {
-            throw new RuntimeException("No se encontró el hijo con el ID proporcionado: " + id);
+            // Si no se encuentra el hijo con el ID proporcionado, lanzar una excepción
+            throw new PersonaNotFoundException("No se encontró el hijo con el ID proporcionado: " + id);
         }
     }
+
+    @Override
+    public List<HijoModel> getHijosByPersonaId(Long id) {
+        return hijoRepository.findByPersonaIdNativeQuery(id);
+        
+    }
+    
+    
 
 }

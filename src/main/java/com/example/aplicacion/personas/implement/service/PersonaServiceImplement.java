@@ -4,6 +4,7 @@
  */
 package com.example.aplicacion.personas.implement.service;
 
+import com.example.aplicacion.personas.exception.PersonaNotFoundException;
 import com.example.aplicacion.personas.model.PersonaModel;
 import com.example.aplicacion.personas.repository.PersonaRepository;
 import com.example.aplicacion.personas.service.PersonaService;
@@ -27,7 +28,7 @@ public class PersonaServiceImplement implements PersonaService {
     public void createPersona(PersonaModel persona) {
         Optional<PersonaModel> existingPersona = personaRepository.findByNombre(persona.getNombre());
         if (existingPersona.isPresent()) {
-            // Si el nombre ya está en uso, no se crea la persona
+            // Si el nombre ya está en uso, lanzar una excepción
             throw new IllegalArgumentException("El nombre '" + persona.getNombre() + "' ya está en uso");
         } else {
             // Si el nombre no está duplicado, guardar la persona
@@ -36,14 +37,19 @@ public class PersonaServiceImplement implements PersonaService {
     }
 
     @Override
-    public List getPersonas() {
+    public List<PersonaModel> getPersonas() {
         return personaRepository.findAll();
     }
 
     @Override
     public PersonaModel getPersonaById(Long id) {
         Optional<PersonaModel> personaOptional = personaRepository.findById(id);
-        return personaOptional.orElse(null);
+        if (personaOptional.isPresent()) {
+            return personaOptional.get();
+        } else {
+            // Si no se encuentra la persona con el ID proporcionado, lanzar una excepción
+            throw new PersonaNotFoundException("No se encontró la persona con el ID proporcionado: " + id);
+        }
     }
 
     @Override
@@ -61,10 +67,12 @@ public class PersonaServiceImplement implements PersonaService {
             try {
                 personaRepository.save(existingPersona); // Guarda la persona actualizada
             } catch (Exception e) {
+                // Maneja la excepción
                 throw new RuntimeException("Error al actualizar la persona: " + e.getMessage());
             }
         } else {
-            throw new RuntimeException("No se encontró la persona con el ID proporcionado: " + id);
+            // Si no se encuentra la persona con el ID proporcionado, lanzar una excepción
+            throw new PersonaNotFoundException("No se encontró la persona con el ID proporcionado: " + id);
         }
     }
 
@@ -73,7 +81,8 @@ public class PersonaServiceImplement implements PersonaService {
         try {
             personaRepository.deleteById(id);
         } catch (EmptyResultDataAccessException e) {
-            throw new RuntimeException("No se encontró la persona con el ID proporcionado: " + id);
+            // Si no se encuentra la persona con el ID proporcionado, lanzar una excepción
+            throw new PersonaNotFoundException("No se encontró la persona con el ID proporcionado: " + id);
         }
     }
 
